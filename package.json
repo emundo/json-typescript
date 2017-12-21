@@ -1,7 +1,7 @@
 {
-  "name": "jsog-typescript",
-  "version": "1.0.0-1",
-  "description": "JavaScript Object Graphs with Typescript",
+  "name": "json-typescript",
+  "version": "0.1.0",
+  "description": "Library to map JSON to a TypeScript Model",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
@@ -16,11 +16,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/e-mundo/jsog-typescript.git"
+    "url": "https://github.com/e-mundo/json-typescript.git"
   },
   "keywords": [
     "typescript",
-    "jsog",
+    "json",
     "npm"
   ],
   "contributors": [
