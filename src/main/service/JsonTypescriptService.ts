@@ -4,10 +4,7 @@ import { Class } from '../support/Class';
 import { Map } from '../support/Map';
 
 // Model
-import { IdentifiedObject } from '../model/IdentifiedObject';
-import { JsogObject } from '../model/JsogObject';
-import { JsogReference } from '../model/JsogReference';
-import { JsogEntry } from '../model/JsogEntry';
+import { JsonObject } from '../model/JsonObject';
 
 // Logger
 import { Logger } from '../log/Logger';
@@ -18,7 +15,7 @@ import { Logger } from '../log/Logger';
  * Instances of this class can be used to serialize and deserialize Objects
  * Graphs to and from Json.
  */
-export class JsogService {
+export class JsonTypescriptService {
 
     // ------------------------------------------------------------------------
     // Private fields
@@ -28,21 +25,6 @@ export class JsogService {
     // ------------------------------------------------------------------------
     // Public fields
     // ------------------------------------------------------------------------
-
-    /**
-     * Property Key for JavaScript Object Graph References.
-     */
-    public refKey: string = '@ref';
-    /**
-     * Property key where JavaScript Object Graph Identifieres.
-     */
-    public idKey: string = '@id';
-
-    /**
-     * Temporary added property key to store JavaScript Object Graph
-     * Identifiers while serializing.
-     */
-    private identifiedObjectKey: string = '__jsogObjectId';
 
     /**
      * Flag to enable debug output.
@@ -94,63 +76,15 @@ export class JsogService {
     }
 
     /**
-     * Get the JavaScript Object Graph Identifiere of object.
-     */
-    private getJsogId(object: JsogObject): string {
-        let id = object[this.idKey];
-        // be defensive if someone uses numbers in violation of the spec
-        if (id) {
-            id = id.toString();
-        }
-        return id;
-    }
-
-    /**
-     * Get the JavaScript Object Reference of object.
-     */
-    // TODO: Find a better way to type JsogReference.
-    private getJsogRef(object: JsogReference | any): string {
-        let ref = object[this.refKey];
-        // Be defensive if someone uses numbers in violation of the spec
-        if (ref) {
-            ref = ref.toString();
-        }
-        return ref;
-    }
-
-    /**
      * Serialize an Object to a JavaScript Object Graph.
      *
      * If an Object in the Graph has a custom toJSON function this is used for serialization.
      *
      * @param object to serialize.
      */
-    public serialize<T>(object: T): JsogObject & T {
+    public serialize<T>(object: T): T {
         this.log.debug('serialize:');
         this.log.debug(object);
-
-        /**
-         * Reset nextId to one.
-         */
-        let nextId = 1;
-
-        // Serialized objects by id.
-        const serializedById: JsogEntry[] = [];
-        // Holds references to all touched objects.
-        const allOriginal: IdentifiedObject[] = [];
-
-        /**
-         * Get the JSOG id of one object. Set the id if neccesarry.
-         *
-         * @param obj Object in object graph.
-         */
-        const getIdOf = (obj: IdentifiedObject): number => {
-            if (!obj.__jsogObjectId) {
-                obj.__jsogObjectId = nextId++;
-                allOriginal.push(obj);
-            }
-            return obj.__jsogObjectId;
-        };
 
         /**
          * Recursive Serialization function.
@@ -164,29 +98,8 @@ export class JsogService {
              *
              * @param original An Object to Serialize.
              */
-            const serializeObject = <T extends IdentifiedObject>(original: T): JsogEntry => {
-                const result: any = {};
-                const id = getIdOf(original);
-
-                // If this object was already serialized
-                // we return an JsogReference.
-                if (serializedById[id]) {
-                    result[this.refKey] = id.toString();
-                    return result;
-                }
-
-                // ... and hold a reference locally to find it later.
-                serializedById[id] = result;
-                // Serialize the object...
-                for (const key of Object.keys(original)) {
-                    if (key !== this.identifiedObjectKey) {
-                        result[key] = serializeRecursive(original[key]);
-                    }
-                }
-                // ... add the JSOG key ...
-                result[this.idKey] = id.toString();
-
-                return result;
+            const serializeObject = (original: T): JsonObject => {
+                return original;
             };
 
             /**
@@ -194,8 +107,8 @@ export class JsogService {
              *
              * @param array to serialize
              */
-            const serializeArray = (array: IdentifiedObject[]): JsogEntry[] => {
-                const allEncoded: JsogEntry[] = [];
+            const serializeArray = (array: T[]): JsonObject[] => {
+                const allEncoded: JsonObject[] = [];
                 for (const entry of array) {
                     allEncoded.push(serializeRecursive(entry));
                 }
@@ -216,15 +129,7 @@ export class JsogService {
         };
 
         // Call recursive serialization.
-        const result = serializeRecursive(object);
-
-        // Remove temporary object identifieres.
-        allOriginal.forEach((element) => {
-            delete element.__jsogObjectId;
-        });
-        this.clearArray(serializedById);
-
-        return result;
+        return serializeRecursive(object);
     }
 
     /**
@@ -233,7 +138,7 @@ export class JsogService {
      * @param jsogObject Array of JsogObjects.
      * @param clazz Class to instantiant the array entries with.
      */
-    public deserializeArray<T extends object>(jsogObject: JsogObject[], clazz?: Class<T>): T[] {
+    public deserializeArray<T extends object>(jsogObject: T[], clazz?: Class<T>): T[] {
         return <T[]>this.deserialize(jsogObject, clazz);
     }
 
@@ -243,11 +148,11 @@ export class JsogService {
      * @param jsogObject JavaScript Object Graph root.
      * @param clazz Class to intantiate the root with.
      */
-    public deserializeObject<T extends object>(jsogObject: JsogObject, clazz?: Class<T>): T {
+    public deserializeObject<T extends object>(jsogObject: T, clazz?: Class<T>): T {
         return <T>this.deserialize(jsogObject, clazz);
     }
 
-    public deserialize<T extends object>(jsogObject: JsogObject | JsogObject[], classObject?: Class<T>): T | T[] {
+    public deserialize<T extends object>(jsogObject: T | T[], classObject?: Class<T>): T | T[] {
         this.log.debug('deserialize:');
         this.log.debug(jsogObject);
         this.log.debug('as class:');
@@ -256,24 +161,18 @@ export class JsogService {
         // Map of found objects by identifier.
         const found: Map<object> = {};
 
-        const deserializeRecursive = <T extends any>(jsogObject: JsogObject | JsogObject[],
+        const deserializeRecursive = <T extends any>(jsogObject: T | T[],
             classObject?: Class<T>): T | T[] => {
             this.log.debug('deserializeRecursive:');
             this.log.debug(jsogObject);
             this.log.debug('as class:');
             this.log.debug(classObject);
 
-            const deserializeObject = <T extends object>(jsogObject: JsogObject, classObject?: Class<T>): T => {
+            const deserializeObject = <T extends object>(jsogObject: JsonObject, classObject?: Class<T>): T => {
                 this.log.debug('deserializeObject:');
                 this.log.debug(jsogObject);
                 this.log.debug('as class:');
                 this.log.debug(classObject);
-
-                const ref = this.getJsogRef(jsogObject);
-                if (ref) {
-                    this.log.debug('Reference to ' + ref + ' found.');
-                    return <T>found[ref];
-                }
 
                 let result: any;
                 if (classObject) {
@@ -282,16 +181,7 @@ export class JsogService {
                     result = {};
                 }
 
-                const id = this.getJsogId(jsogObject);
-                if (id) {
-                    found[id] = result;
-                }
-
                 for (const key of Object.keys(jsogObject)) {
-                    if (key === this.idKey) {
-                        continue;
-                    }
-
                     if (Reflect.hasMetadata('JsonProperty', result, key)) {
                         let clazz = Reflect.getMetadata('JsonProperty', result, key);
                         if (!clazz) {
@@ -307,7 +197,7 @@ export class JsogService {
                 return result;
             };
 
-            const deserializeArray = <T extends object>(jsogObject: JsogObject[], classObject?: Class<T>): T[] => {
+            const deserializeArray = <T extends object>(jsogObject: JsonObject[], classObject?: Class<T>): T[] => {
                 const result: T[] = [];
                 for (const value of jsogObject) {
                     // We now this cast is true.
@@ -323,13 +213,13 @@ export class JsogService {
             // Deserialize Arrays.
             if (this.isArray(jsogObject)) {
                 // We know this cast ist ture.
-                jsogObject = <JsogObject[]>jsogObject;
+                jsogObject = <T[]>jsogObject;
                 return deserializeArray(jsogObject, classObject);
             }
             // Deserialize Objets
             if (typeof jsogObject === 'object') {
                 // We know this cast ist ture.
-                jsogObject = <JsogObject>jsogObject;
+                jsogObject = <T>jsogObject;
                 return deserializeObject(jsogObject, classObject);
             }
 

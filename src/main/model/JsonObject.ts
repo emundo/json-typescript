@@ -1,7 +1,6 @@
 /**
  * Object in a JavaScript Object Graph
  */
-export interface JsogObject {
-    '@id': string;
+export interface JsonObject {
     [property: string]: any;
 }
