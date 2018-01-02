@@ -158,9 +158,6 @@ export class JsonTypescriptService {
         this.log.debug('as class:');
         this.log.debug(classObject);
 
-        // Map of found objects by identifier.
-        const found: Map<object> = {};
-
         const deserializeRecursive = <T extends any>(jsogObject: T | T[],
             classObject?: Class<T>): T | T[] => {
             this.log.debug('deserializeRecursive:');
