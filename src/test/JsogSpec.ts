@@ -1,4 +1,5 @@
 import { ListItem } from './support/ListItem';
+import { WithType } from './support/WithType';
 import { SpecReporter } from 'jasmine-spec-reporter';
 // Module
 import { JsonTypescriptService } from './../main/service/JsonTypescriptService';
@@ -6,6 +7,7 @@ import { Logger } from './../main/log/Logger';
 
 // Moment
 import * as moment from 'moment';
+import { Parent } from './support/Parent';
 
 // Setup...
 const log = Logger.getInstance();
@@ -85,5 +87,31 @@ describe('Deserialize null values', () => {
 
     it('should work', () => {
         expect(deserialized.lorem).toBeNull();
+    });
+});
+
+describe('Deserializing Model objects', () => {
+    const parent: any = {
+        child: {
+            name: 'Kind',
+        },
+    };
+
+    const deserialized = jsog.deserializeObject(parent, Parent);
+
+    it('should instantiate child', () => {
+        expect(deserialized.child.getName()).toBeDefined();
+    });
+});
+
+describe('Deserializing Annotated String Types', () => {
+    const withType: WithType = {
+        dtype: 'one',
+    };
+
+    const deserialized = jsog.deserializeObject(withType, WithType);
+
+    it('should work', () => {
+        expect(deserialized).toEqual(withType);
     });
 });
