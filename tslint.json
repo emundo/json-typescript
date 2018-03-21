@@ -55,7 +55,7 @@
         "no-construct": true,
         "no-debugger": true,
         "no-default-export": true,
-        "no-duplicate-variable": true,
+        "no-duplicate-switch-case": true,
         "no-empty": true,
         "no-internal-module": true,
         "no-null-keyword": false,
@@ -180,15 +180,14 @@
         "react-this-binding-issue": true,
         "use-isnan": true,
         "use-named-parameter": true,
-        "valid-typeof": true,
         "new-parens": true,
-        "no-empty-interfaces": true,
+        "no-empty-interface": true,
         "no-for-in": true,
         "no-function-expression": true,
         "no-multiline-string": true, // multiline-strings often introduce unnecessary whitespace into the string literals
         "no-typeof-undefined": true,
         "no-unnecessary-local-variable": true,
-        "no-var-self": true,
+        "no-this-assignment": true,
         "one-variable-per-declaration": [
             true
         ],
@@ -211,3 +210,4 @@
         "no-angle-bracket-type-assertion": false
     }
 }
+
