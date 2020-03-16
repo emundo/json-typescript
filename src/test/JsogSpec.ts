@@ -112,6 +112,7 @@ describe('Deserializing Annotated String Types', () => {
     const deserialized = jsog.deserializeObject(withType, WithType);
 
     it('should work', () => {
-        expect(deserialized).toEqual(withType);
+        expect(deserialized instanceof WithType).toBeTruthy();
+        expect(deserialized.dtype).toEqual(withType.dtype);
     });
 });
